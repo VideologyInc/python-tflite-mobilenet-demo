@@ -34,7 +34,7 @@
 
 	`gst-launch-1.0 rtspsrc location=rtsp://scailx-ai.local:8554/stream latency=0 connection-speed=3000 ! queue ! decodebin ! queue ! videoconvert ! autovideosink sync=false`
 
-==========================================================================================================================
+=================================================================
 
 #### 5. Alternatively, on Windows and Linux host (such as in VirtualBox guest systems), we can run the OpenCV python program ~/host/opencv_stream.py to access camera object detection stream to avoid complex gstreamer command in step 4.
 
