@@ -35,7 +35,7 @@
 	`gst-launch-1.0 rtspsrc location=rtsp://scailx-ai.local:8554/stream latency=0 connection-speed=3000 ! queue ! decodebin ! queue ! videoconvert ! autovideosink sync=false`
 
 
-####. Enjoy object detection :-)
+#### Enjoy object detection :-)
 
 
 ***
