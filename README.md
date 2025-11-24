@@ -48,7 +48,8 @@
 	
 ####    scailx_rtsp_url = "rtsp://192.168.9.31:8554/stream"
 
-####	Now run the same command in Ubuntu python venv. (Make sure we can see the camera device with `ls -l /dev/video*`).
+####	Now run the same command in Ubuntu python venv. 
+####	(Make sure we can see the camera device with `ls -l /dev/video*`).
 
 #### `python opencv_stream.py`    
 
