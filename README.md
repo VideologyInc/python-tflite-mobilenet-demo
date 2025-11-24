@@ -34,9 +34,26 @@
 
 	`gst-launch-1.0 rtspsrc location=rtsp://scailx-ai.local:8554/stream latency=0 connection-speed=3000 ! queue ! decodebin ! queue ! videoconvert ! autovideosink sync=false`
 
+=================================================================
+
+#### 5. Alternatively, on Windows and Linux host (such as in VirtualBox guest systems), we can run the OpenCV python program ~/host/opencv_stream.py to access camera object detection stream to avoid complex gstreamer command in step 4.
+
+#### 5.1	On Windows python >=3.10 venv.
+
+#### `python opencv_stream.py`    
+
+#### 5.2	On VirtualBox Ubuntu guest system with python >=3.10 venv.
+
+####	Because our laptop have 2 network routes - one to company's network (10.* ip address) and one to engineering lap (ip address 192.168.*), while Scailx camera is connected to engineering network (ip address 192.168.*), in VirtualBox we first need to enable webcamera=>find Scailx camera (>=2nd on the list, 1st is usually our Laptop camera or web camera ;-) for the guest ubuntu system, then replace the rtsp line in the python program hostname using ip address of our Scailx camera, for example
+	
+####    scailx_rtsp_url = "rtsp://192.168.9.31:8554/stream"
+
+####	Now run the same command in Ubuntu python venv. 
+####	(Make sure we can see the camera device with `ls -l /dev/video*`).
+
+#### `python opencv_stream.py`    
 
 #### Enjoy object detection :-)
-
 
 ***
 
