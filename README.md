@@ -44,12 +44,11 @@
 
 #### 5.2	On VirtualBox Ubuntu guest system with python >=3.10 venv.
 
-####	Because our laptop have 2 network routes - one to company's network (10.* ip address) and one to engineering lap (ip address 192.168.*), while Scailx camera is connected to engineering network (ip address 192.168.*), in VirtualBox we first need to enable webcamera=>find Scailx camera (>=2nd on the list, 1st is usually our Laptop camera or web camera ;-) for the guest ubuntu system, then replace the rtsp line in the python program hostname using ip address of our Scailx camera, for example
+####	Because our laptop have 2 network routes - one to company's network (10.* ip address) and one to engineering lap (ip address 192.168.*), while Scailx camera is connected to engineering network (ip address 192.168.*), in VirtualBox we need to replace the rtsp line in the python program hostname with ip address of our Scailx camera, for example
 	
 ####    scailx_rtsp_url = "rtsp://192.168.9.31:8554/stream"
 
 ####	Now run the same command in Ubuntu python venv. 
-####	(Make sure we can see the camera device with `ls -l /dev/video*`).
 
 #### `python opencv_stream.py`    
 
