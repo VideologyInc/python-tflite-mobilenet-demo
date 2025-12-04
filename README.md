@@ -6,6 +6,8 @@
 
 #### https://videology-inc.atlassian.net/wiki/spaces/SUD/pages/63275010/Running+AI+models+in+Python+with+Tensorflow-lite
 
+#### This step is very important to use git lfs to clone the repo to get large tflite model files !
+
 #### On camera, please use git link to clone the main branch from the repository instead of https after git lfs install.
 
 #### git clone git@github.com:VideologyInc/python-tflite-mobilenet-demo.git
@@ -28,7 +30,7 @@
 #### `python3 object-detection.py -d /dev/video0`
 
 #### Or.
-#### `python3 yolo_object-detection.py -d /dev/video0	`
+#### `python3 yolo_object_detection.py -d /dev/video0	`
 
 #### 4. To see object detction effective on Windows, please run
 
