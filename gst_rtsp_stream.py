@@ -17,32 +17,12 @@ import socket
 import logging
 import queue
 
+import json
+
 gi.require_version("Gst", "1.0")
 gi.require_version("GstRtspServer", "1.0")
 from gi.repository import Gst, GstRtspServer, GLib
 
-
-## Read Environment Variables
-
-CAPTURE_DEVICE = os.environ.get("CAPTURE_DEVICE")
-if not CAPTURE_DEVICE:
-    CAPTURE_DEVICE = "/dev/video0"
-
-CAPTURE_RESOLUTION_X = os.environ.get("CAPTURE_RESOLUTION_X")
-if not CAPTURE_RESOLUTION_X:
-    CAPTURE_RESOLUTION_X = 1920
-
-CAPTURE_RESOLUTION_Y = os.environ.get("CAPTURE_RESOLUTION_Y")
-if not CAPTURE_RESOLUTION_Y:
-    CAPTURE_RESOLUTION_Y = 1080
-
-CAPTURE_FRAMERATE = os.environ.get("CAPTURE_FRAMERATE")
-if not CAPTURE_FRAMERATE:
-    CAPTURE_FRAMERATE = 30
-
-STREAM_BITRATE = os.environ.get("STREAM_BITRATE")
-if not STREAM_BITRATE:
-    STREAM_BITRATE = 0
 
 PORT_NUMBER = "554"
 
@@ -58,19 +38,26 @@ new_frame_time = 0
 
 ## Media factory that runs camera streaming
 class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
-    def __init__(self, **properties):
-        super(InferenceDataFactory, self).__init__(**properties)
+    def __init__(self, pipe_dict, **properties):
+        super(StreamDataFactory, self).__init__(**properties)
 
         # Setup frame counter for timestamps
         self.number_frames = 0
         self.duration = (
-            1.0 / CAPTURE_FRAMERATE
+            1.0 / pipe_dict["fps"]
         ) * Gst.SECOND  # duration of a frame in nanoseconds
+
+        # set width and height from pipe_dict
+        dimensions_list = pipe_dict["resolution"].split('x')
+
+        # Convert the string elements in the list to integers
+        self.width = int(dimensions_list[0])
+        self.height = int(dimensions_list[1])
 
         # Create opencv Video Capture
         self.cap = cv2.VideoCapture(
-            f"v4l2src device={DEVICE} "
-            f"! video/x-raw,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1 "
+            f"v4l2src device={pipe_dict["device"]} "
+            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
             f"! imxvideoconvert_g2d "
             f"! video/x-raw,format=BGRA "
             f"! appsink",
@@ -80,8 +67,8 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         # Create factory launch string
         self.launch_string = (
             f"appsrc name=source is-live=true format=GST_FORMAT_TIME "
-            f"! video/x-raw,format=BGRA,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1 "
-            f"! vpuenc_h264 bitrate={STREAM_BITRATE} "
+            f"! video/x-raw,format=BGRA,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
+            f"! vpuenc_h264 "
             f"! rtph264pay config-interval=1 name=pay0 pt=96 "
         )
 
@@ -152,7 +139,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
 
 
 class RtspServer(GstRtspServer.RTSPServer):
-    def __init__(self, **properties):
+    def __init__(self, pipe_dict, net_url, **properties):
         super(RtspServer, self).__init__(**properties)
 
         # Use hostname as server mount point instead of 127.0.0.1 ;-)
@@ -163,7 +150,7 @@ class RtspServer(GstRtspServer.RTSPServer):
         self.set_service(PORT_NUMBER)
 
         # Create factory
-        self.factory = StreamDataFactory()
+        self.factory = StreamDataFactory(pipe_dict)
 
         # Set the factory to shared so it supports multiple clients
         self.factory.set_shared(True)
@@ -173,6 +160,14 @@ class RtspServer(GstRtspServer.RTSPServer):
         self.get_mount_points().add_factory("/stream", self.factory)
         self.attach(None)
 
+        # Get the address
+        server_address = self.get_address()
+        # Get the bound port number
+        server_port = self.get_bound_port()
+
+        print(f"Stream URL: rtsp://{server_address}:{server_port}/stream")
+
+
     def client_connected(self, gst_server_obj, rtsp_client_obj):
         logging.info("[INFO]: Client has connected")
         self.create_media_factories()
@@ -180,45 +175,95 @@ class RtspServer(GstRtspServer.RTSPServer):
         if self.verbosity > 0:
             logging.info("[INFO]: Client has connected")
 
+def read_pipeline(filename):
+    """
+    Given input pipeline json name, parse the data section, return camera setting dict and rtsp full url.
+
+    Arguments:
+    filename -- Input pipeline json filename.
+    
+    Returns:
+    (dict, str) -- Pair of camera setting dict and rtsp full url to access.
+
+    """
+
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            data_dict = json.load(file) # Deserialize the file data into a Python dictionary
+            # print(data_dict)
+    
+        # standard Scailx Portal pipeline file should contain "inputId" and "components" / "data" section.
+        if "inputId" in data_dict:
+            camera_id = data_dict["inputId"]
+        else:
+            camera_id = "local_camera0"
+        
+        net_id = "input_network_stream0"    # should also add to pipeline file bottom ;-) 
+
+        # Try to find matching "node" in components and extract its "data" section as output dict ;-)
+        if "components" in data_dict:
+            out_dict = {}
+            out_url = ""
+            for cm in data_dict["components"]:
+                if "id" in cm:
+                    if cm["id"]==camera_id and "data" in cm and "settings" in cm["data"]:
+                        out_dict = cm["data"]["settings"]
+                    if cm["id"]==net_id and "data" in cm and "settings" in cm["data"] and "location" in cm["data"]["settings"]:
+                        out_url = cm["data"]["settings"]["location"]
+            print("Load camera settings from pipeline json file ", filename)
+            return out_dict, out_url
+
+    except FileNotFoundError:
+        print(f"Error: The file '{filename}' was not found.")
+        return {}, None
+    except json.JSONDecodeError:
+        print(f"Error: Could not decode JSON from the file. Check file format.")
+        return {}, None
+
+    return {}, None
+
 
 def main():
-    global CAPTURE_RESOLUTION_X, CAPTURE_RESOLUTION_Y, CAPTURE_FRAMERATE
+    global CAPTURE_RESOLUTION_X, CAPTURE_RESOLUTION_Y, CAPTURE_FRAMERATE, CAPTURE_DEVICE
 
-    parser = ArgumentParser(description="Obeject detection - TensorFlow Lite")
+    parser = ArgumentParser(description="gstreamer rtsp stream server")
+    parser.add_argument("--pipeline", "-p", help="pipeline json file", default="data/settings/camera0_pipeline.json")
+
     parser.add_argument(
         "--device", "-d", help="Video device /dev/video.. ", default="/dev/video0"
     )
-    parser.add_argument("--resolution", "-r", help="1080p or 720p", default="1080p")
+    parser.add_argument("--width", "-w", help="1920 or 1280 or 640 for Boson", default="1920")
+    parser.add_argument("--height", help="1080 or 720 or 512 for Boson", default="1080")
     parser.add_argument(
-        "--framerate", "-f", help="Capture framrate 60 or 30", default="60"
+        "--framerate", "-r", help="Capture framrate 60 or 30", default="60"
+    )
+    parser.add_argument(
+        "--format", "-f", help="Video frame format: GREY or YUYV or RGB3 or BGR3 or NV12 etc.", default="YUYV"
     )
 
     args = parser.parse_args()
 
-    if args.resolution == None:
-        CAPTURE_RESOLUTION_X = 1920
-        CAPTURE_RESOLUTION_Y = 1080
-    if args.resolution == "1080p":
-        CAPTURE_RESOLUTION_X = 1920
-        CAPTURE_RESOLUTION_Y = 1080
-    if args.resolution == "720p":
-        CAPTURE_RESOLUTION_X = 1280
-        CAPTURE_RESOLUTION_Y = 720
+    print(args.device)
 
-    if args.framerate == None:
-        CAPTURE_FRAMERATE = 60
-    else:
-        CAPTURE_FRAMERATE = int(args.framerate)
+    pipe_dict = {}
+    net_url = ""
+    if args.pipeline is not None:
+        pipe_dict, net_url = read_pipeline(args.pipeline)
 
-    if args.object_list == None:
-        OBJECT_LIST = []
-    else:
-        OBJECT_LIST = args.object_list
+    if pipe_dict=={}:
+        pipe_dict["device"] = args.device
+        pipe_dict["resolution"] = args.width + "x" + args.height
+        pipe_dict["fps"] = int(args.framerate)
+        pipe_dict["format"] = args.format
 
-    print(CAPTURE_RESOLUTION_X, "x", CAPTURE_RESOLUTION_Y, "@", CAPTURE_FRAMERATE)
+    if net_url=="":
+        net_url = "rtsp://scailx-ai-2.local:554/stream"        
+
+    print(pipe_dict)
+    print(net_url)
 
     Gst.init(None)
-    server = RtspServer()
+    server = RtspServer(pipe_dict, net_url)
     loop = GLib.MainLoop()
     loop.run()
 
