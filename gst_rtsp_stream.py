@@ -59,7 +59,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
             f"v4l2src device={pipe_dict["device"]} "
             f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
             f"! imxvideoconvert_g2d "
-            f"! video/x-raw,format=BGRA "
+            f"! video/x-raw,format=RGBA "
             f"! appsink",
             cv2.CAP_GSTREAMER,
         )
@@ -67,7 +67,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         # Create factory launch string
         self.launch_string = (
             f"appsrc name=source is-live=true format=GST_FORMAT_TIME "
-            f"! video/x-raw,format=BGRA,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
+            f"! video/x-raw,format=RGBA,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
             f"! vpuenc_h264 "
             f"! rtph264pay config-interval=1 name=pay0 pt=96 "
         )
