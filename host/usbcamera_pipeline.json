@@ -1,0 +1,75 @@
+{
+  "components": [
+    {
+      "id": "local_camera0",
+      "type": "bin",
+      "position": {
+        "x": 330,
+        "y": 150
+      },
+      "data": {
+        "type": "local_camera",
+        "category": "inputs",
+        "settings": {
+          "format": "YUYV",
+          "fps": 30,
+          "resolution": "1280x720",
+          "device": "/dev/video0"
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "resize0"
+        ],
+        "binRootId": "v4l2src0",
+        "binOutputNodeId": "videoconvert0",
+        "expanded": true,
+        "expandedWidth": 0,
+        "expandedHeight": 0
+      },
+      "style": {
+        "width": 740,
+        "height": 200
+      },
+      "measured": {
+        "width": 740,
+        "height": 200
+      },
+      "selected": false
+    },
+    {
+      "id": "input_network_stream0",
+      "type": "bin",
+      "position": {
+        "x": 130,
+        "y": -440
+      },
+      "data": {
+        "type": "input_network_stream",
+        "category": "inputs",
+        "settings": {
+          "location": "/dev/video0"
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "browser_preview0"
+        ],
+        "binRootId": "rtspsrc0",
+        "binOutputNodeId": "queue1",
+        "expanded": true,
+        "expandedWidth": 0,
+        "expandedHeight": 0
+      },
+      "style": {
+        "width": 1490,
+        "height": 200
+      },
+      "measured": {
+        "width": 1490,
+        "height": 200
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "inputId": "local_camera0"
+}

@@ -1,6 +1,8 @@
 import argparse
 import cv2
 
+from read_json import read_pipeline
+
 # To see whether opencv has gstreamer support.
 # Need to rebuild opencv from source if not (both on Windows and on Linux).
 # print(cv2.getBuildInformation())
@@ -33,8 +35,10 @@ gstreamer_pipeline = (
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Camera Object Detection Test", prog="opencv_stream"
+        description="Camera Pipeline Test", prog="opencv_stream"
     )
+
+    parser.add_argument("--pipeline", "-p", help="pipeline json file", default="usbcamera_pipeline.json")
 
     parser.add_argument(
         "-i",
@@ -46,13 +50,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    pipe_dict, device_url = read_pipeline(args.pipeline)	
+
+    if device_url=="":
+        device_url= "dev/video0"
+        	
     scailx_rtsp_url = (
         "rtsp://scailx-ai.local:8554/stream"
         if args.input == 1
         else "rtsp://scailx-ai-2.local:8554/stream"
     )
 
-    cap = cv2.VideoCapture(scailx_rtsp_url)
+    cap = cv2.VideoCapture(device_url) # scailx_rtsp_url)
 
     if not cap.isOpened():
         print("Error: Could not open RTSP stream.")
