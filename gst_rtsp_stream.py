@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
-########################################################
-#
-# Simple gstream RTSP from camera device path /dev/video0 etc.
-#
-########################################################
+"""
+Simple gstream RTSP from camera device path /dev/video0 etc.
+
+Copyright (C) 2026 Videology
+Programmed by Jianping Ye <jye@videologyinc.com>
+  
+Jan 026. Added gst rtsp server using camera device specified by a pipeline json file.
+
+"""
 
 import sys, getopt
 import numpy as np
@@ -17,7 +21,7 @@ import socket
 import logging
 import queue
 
-import json
+from read_write_json import read_pipeline, save_pipeline
 
 gi.require_version("Gst", "1.0")
 gi.require_version("GstRtspServer", "1.0")
@@ -144,7 +148,7 @@ class RtspServer(GstRtspServer.RTSPServer):
         self.hostname = socket.gethostname()
 
         self.set_address(self.hostname)
-        # Set port
+        # Set port by user input
         self.set_service(pipe_dict["port"])
 
         # Create factory
@@ -160,11 +164,15 @@ class RtspServer(GstRtspServer.RTSPServer):
 
         # Get the address
         server_address = self.get_address()
-        # Get the bound port number
-        server_port = self.get_bound_port()
-
         ip_address = socket.gethostbyname(self.hostname)
 
+        # Get the bound port number
+        server_port = self.get_bound_port()
+        if server_port==-1:
+            # service port is not available. Set 0 using randomly assigned port instead.
+            raise ValueError(f"Service port {pipe_dict['port']} is not available. Please use 0 instead to get assigned port randomly.") 
+
+        pipe_dict["port"] = str(server_port)
         print(f"Stream URL: rtsp://{server_address}:{server_port}/stream")
         print(f"Stream URL: rtsp://{ip_address}:{server_port}/stream")
 
@@ -176,53 +184,6 @@ class RtspServer(GstRtspServer.RTSPServer):
         if self.verbosity > 0:
             logging.info("[INFO]: Client has connected")
 
-def read_pipeline(filename):
-    """
-    Given input pipeline json name, parse the data section, return camera setting dict and rtsp full url.
-
-    Arguments:
-    filename -- Input pipeline json filename.
-    
-    Returns:
-    (dict, str) -- Pair of camera setting dict and rtsp full url to access.
-
-    """
-
-    try:
-        with open(filename, 'r', encoding='utf-8') as file:
-            data_dict = json.load(file) # Deserialize the file data into a Python dictionary
-            # print(data_dict)
-    
-        # standard Scailx Portal pipeline file should contain "inputId" and "components" / "data" section.
-        if "inputId" in data_dict:
-            camera_id = data_dict["inputId"]
-        else:
-            camera_id = "local_camera0"
-        
-        net_id = "input_network_stream0"    # should also add to pipeline file bottom ;-) 
-
-        # Try to find matching "node" in components and extract its "data" section as output dict ;-)
-        if "components" in data_dict:
-            out_dict = {}
-            out_url = ""
-            for cm in data_dict["components"]:
-                if "id" in cm:
-                    if cm["id"]==camera_id and "data" in cm and "settings" in cm["data"]:
-                        out_dict = cm["data"]["settings"]
-                    if cm["id"]==net_id and "data" in cm and "settings" in cm["data"] and "location" in cm["data"]["settings"]:
-                        out_url = cm["data"]["settings"]["location"]
-            print("Load camera settings from pipeline json file ", filename)
-            return out_dict, out_url
-
-    except FileNotFoundError:
-        print(f"Error: The file '{filename}' was not found.")
-        return {}, None
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from the file. Check file format.")
-        return {}, None
-
-    return {}, None
-
 
 def main():
     global CAPTURE_RESOLUTION_X, CAPTURE_RESOLUTION_Y, CAPTURE_FRAMERATE, CAPTURE_DEVICE
@@ -232,6 +193,7 @@ def main():
     parser.add_argument("--port", "-t", help="Port number rtsp server sets by service (0 to set random available)", default="554")
 
     parser.add_argument("--pipeline", "-p", help="pipeline json file", default="data/settings/camera0_pipeline.json")
+    parser.add_argument("--output", "-o", help="Output pipeline json file with any changes by user input", default="")
 
     parser.add_argument(
         "--device", "-d", help="Video device /dev/video.. ", default="/dev/video0"
@@ -252,7 +214,7 @@ def main():
     pipe_dict = {}
     net_url = ""
     if args.pipeline is not None:
-        pipe_dict, net_url = read_pipeline(args.pipeline)
+        data_dict, pipe_dict, net_url = read_pipeline(args.pipeline)
 
     if pipe_dict=={}:
         pipe_dict["device"] = args.device
@@ -266,10 +228,16 @@ def main():
     pipe_dict["port"] = args.port
 
     print(pipe_dict)
-    print(net_url)
+    print("net url from pipeline file = ", net_url)
 
     Gst.init(None)
     server = RtspServer(pipe_dict, net_url)
+
+    # Port is updated in server init if set_service("0").
+    # So we need to save output pipeline json here (not before server initialized ;-)
+    if args.output!="":
+        save_pipeline(args.output, data_dict, pipe_dict, net_url)
+
     loop = GLib.MainLoop()
     loop.run()
 
