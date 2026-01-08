@@ -1,6 +1,27 @@
 
 import json
 
+from urllib.parse import urlparse
+
+def get_port_from_url(url_string):
+    """
+    Extracts the port number from a given URL string.
+    Returns the port number (integer) or None if no port is specified 
+    and it is not a well-known scheme (like http/https).
+    """
+    parsed_url = urlparse(url_string)
+    
+    if parsed_url.port:
+        return parsed_url.port
+    elif parsed_url.scheme in ('http', 'ws'):
+        return 80
+    elif parsed_url.scheme in ('https', 'wss'):
+        return 443
+    else:
+        # Returns None if no port is explicitly mentioned and the scheme is non-standard
+        return None
+
+
 def read_pipeline(filename):
     """
     Given input pipeline json name, parse the data section, return camera setting dict and rtsp full url.
