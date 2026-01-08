@@ -85,7 +85,7 @@
 `python3 gst_rtsp_stream.py -p data/settings/camera0_pipeline.json -t 3001 -o data/settings/camera0_port3001_pipeline.json`    
 (Load camera settings, specify port number and save updated dictionary to a new pipeline file, which can be used by host program. See below.)
 
-#### 6. On Windows host side, assume we are in python 3.10 venv, run
+#### 7. On Windows host side, assume we are in python 3.10 venv, run
 
 `cd host`
 `python opencv_stream.py -h`     (Show help.)
