@@ -24,8 +24,6 @@ gi.require_version("GstRtspServer", "1.0")
 from gi.repository import Gst, GstRtspServer, GLib
 
 
-PORT_NUMBER = "554"
-
 t10_ = time()
 t11 = time()
 t12 = time()
@@ -56,8 +54,8 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
 
         # Create opencv Video Capture
         self.cap = cv2.VideoCapture(
-            f"v4l2src device={pipe_dict["device"]} "
-            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
+            f"v4l2src device={pipe_dict['device']} "
+            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
             f"! imxvideoconvert_g2d "
             f"! video/x-raw,format=RGBA "
             f"! appsink",
@@ -67,7 +65,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         # Create factory launch string
         self.launch_string = (
             f"appsrc name=source is-live=true format=GST_FORMAT_TIME "
-            f"! video/x-raw,format=RGBA,width={self.width},height={self.height},framerate={pipe_dict["fps"]}/1 "
+            f"! video/x-raw,format=RGBA,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
             f"! vpuenc_h264 "
             f"! rtph264pay config-interval=1 name=pay0 pt=96 "
         )
@@ -147,7 +145,7 @@ class RtspServer(GstRtspServer.RTSPServer):
 
         self.set_address(self.hostname)
         # Set port
-        self.set_service(PORT_NUMBER)
+        self.set_service(pipe_dict["port"])
 
         # Create factory
         self.factory = StreamDataFactory(pipe_dict)
@@ -165,7 +163,10 @@ class RtspServer(GstRtspServer.RTSPServer):
         # Get the bound port number
         server_port = self.get_bound_port()
 
+        ip_address = socket.gethostbyname(self.hostname)
+
         print(f"Stream URL: rtsp://{server_address}:{server_port}/stream")
+        print(f"Stream URL: rtsp://{ip_address}:{server_port}/stream")
 
 
     def client_connected(self, gst_server_obj, rtsp_client_obj):
@@ -227,6 +228,9 @@ def main():
     global CAPTURE_RESOLUTION_X, CAPTURE_RESOLUTION_Y, CAPTURE_FRAMERATE, CAPTURE_DEVICE
 
     parser = ArgumentParser(description="gstreamer rtsp stream server")
+
+    parser.add_argument("--port", "-t", help="Port number rtsp server sets by service (0 to set random available)", default="554")
+
     parser.add_argument("--pipeline", "-p", help="pipeline json file", default="data/settings/camera0_pipeline.json")
 
     parser.add_argument(
@@ -257,7 +261,9 @@ def main():
         pipe_dict["format"] = args.format
 
     if net_url=="":
-        net_url = "rtsp://scailx-ai-2.local:554/stream"        
+        net_url = f"rtsp://{socket.gethostname()}:{args.port}/stream"
+
+    pipe_dict["port"] = args.port
 
     print(pipe_dict)
     print(net_url)
