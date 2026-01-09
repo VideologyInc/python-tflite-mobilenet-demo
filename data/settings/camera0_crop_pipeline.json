@@ -1,0 +1,149 @@
+{
+  "components": [
+    {
+      "id": "local_camera0",
+      "type": "bin",
+      "position": {
+        "x": 330,
+        "y": 150
+      },
+      "data": {
+        "type": "local_camera",
+        "category": "inputs",
+        "settings": {
+          "format": "YUYV",
+          "fps": 30,
+          "resolution": "1920x1080",
+          "device": "/dev/video0"
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "resize0"
+        ],
+        "binRootId": "v4l2src0",
+        "binOutputNodeId": "videoconvert0",
+        "expanded": true,
+        "expandedWidth": 0,
+        "expandedHeight": 0
+      },
+      "style": {
+        "width": 740,
+        "height": 200
+      },
+      "measured": {
+        "width": 740,
+        "height": 200
+      },
+      "selected": false
+    },
+    {
+      "id": "resize0",
+      "type": "bin",
+      "position": {
+        "x": 105,
+        "y": 430
+      },
+      "data": {
+        "type": "videoscale",
+        "category": "processing",
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "queue1"
+        ],
+        "binRootId": "videoscale0",
+        "binOutputNodeId": "videoconvert1",
+        "expanded": false,
+        "expandedWidth": 640,
+        "expandedHeight": 230
+      },
+      "style": {
+        "width": 150,
+        "height": 50
+      },
+      "measured": {
+        "width": 150,
+        "height": 50
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "crop0",
+      "type": "bin",
+      "position": {
+        "x": 105,
+        "y": 430
+      },
+      "data": {
+        "type": "videocrop",
+        "category": "processing",
+        "settings": {
+          "left": 400,
+          "top": 200,
+          "right": 500,
+          "bottom": 300
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "queue1"
+        ],
+        "binRootId": "videoscale0",
+        "binOutputNodeId": "videoconvert1",
+        "expanded": false,
+        "expandedWidth": 640,
+        "expandedHeight": 230
+      },
+      "style": {
+        "width": 150,
+        "height": 50
+      },
+      "measured": {
+        "width": 150,
+        "height": 50
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "input_network_stream0",
+      "type": "bin",
+      "position": {
+        "x": 130,
+        "y": -440
+      },
+      "data": {
+        "type": "input_network_stream",
+        "category": "inputs",
+        "settings": {
+          "location": "rtsp://scailx-ai-2.local:554/stream"
+        },
+        "initiallyOpen": false,
+        "outputIds": [
+          "browser_preview0"
+        ],
+        "binRootId": "rtspsrc0",
+        "binOutputNodeId": "queue1",
+        "expanded": true,
+        "expandedWidth": 0,
+        "expandedHeight": 0
+      },
+      "style": {
+        "width": 1490,
+        "height": 200
+      },
+      "measured": {
+        "width": 1490,
+        "height": 200
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "inputId": "local_camera0",
+  "processingId": ["crop0"],
+  "outputId": "input_network_stream0" 
+}
