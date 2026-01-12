@@ -56,13 +56,13 @@ def get_gst_processing_string(node_dict):
     if node_dict["type"]=="videoscale":
         width = node_dict["settings"]["width"]
         height = node_dict["settings"]["height"]
-        return f"queue2 ! videoscale ! video/x-raw, width={width}, height={height}"
+        return f"queue max-size-buffers=10 leaky=2 ! videoscale ! video/x-raw, width={width}, height={height}"
     elif node_dict["type"]=="videocrop":
         left = node_dict["settings"]["left"]
         top = node_dict["settings"]["top"]
         right = node_dict["settings"]["right"]
         bottom = node_dict["settings"]["bottom"]
-        return f"queue2 ! videocrop top={top} left={left} right={right} bottom={bottom}"
+        return f"queue max-size-buffers=10 leaky=2 ! videocrop top={top} left={left} right={right} bottom={bottom}"
     else:
         return ""
 
@@ -112,7 +112,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
             f"v4l2src device={pipe_dict['device']} "
             f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
             f" {gst_processing_str} "
-            f"! imxvideoconvert_g2d "
+            f"! queue max-size-buffers=10 leaky=2 ! imxvideoconvert_g2d "
             f"! video/x-raw,width={outwidth},height={outheight},format=RGBA "
             f"! appsink"
         )
@@ -128,7 +128,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         self.launch_string = (
             f"appsrc name=source is-live=true format=GST_FORMAT_TIME "
             f"! video/x-raw,format=RGBA,width={outwidth},height={outheight},framerate={pipe_dict['fps']}/1 "
-            f"! vpuenc_h264 "
+            f"! queue max-size-buffers=10 leaky=2 ! vpuenc_h264 "
             f"! rtph264pay config-interval=1 name=pay0 pt=96 "
         )
 
