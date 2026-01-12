@@ -108,11 +108,14 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         # process str is like '! ... '
         gst_processing_str = get_gst_full_processing_string(process_list)
 
+        format_str = pipe_dict["format"]
+        convert_str = "imxvideoconvert_g2d"
+
         gst_src_string = (
             f"v4l2src device={pipe_dict['device']} "
-            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
+            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1,format={format_str} "
             f" {gst_processing_str} "
-            f"! queue max-size-buffers=10 leaky=2 ! imxvideoconvert_g2d "
+            f"! queue max-size-buffers=10 leaky=2 ! {convert_str} "
             f"! video/x-raw,width={outwidth},height={outheight},format=RGBA "
             f"! appsink"
         )
