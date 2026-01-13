@@ -11,7 +11,7 @@
         "type": "local_camera",
         "category": "inputs",
         "settings": {
-          "format": "YUYV",
+          "format": "NV12",
           "fps": 30,
           "resolution": "1920x1080",
           "device": "/dev/video0"

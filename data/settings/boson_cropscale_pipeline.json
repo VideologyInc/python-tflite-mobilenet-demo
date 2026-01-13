@@ -12,8 +12,8 @@
         "category": "inputs",
         "settings": {
           "format": "NV12",
-          "fps": 30,
-          "resolution": "1920x1080",
+          "fps": 9,
+          "resolution": "640x512",
           "device": "/dev/video0"
         },
         "initiallyOpen": false,
@@ -47,8 +47,8 @@
         "type": "videoscale",
         "category": "processing",
         "settings": {
-          "width": 1920,
-          "height": 1080
+          "width": 1280,
+          "height": 720
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -82,10 +82,10 @@
         "type": "videocrop",
         "category": "processing",
         "settings": {
-          "left": 400,
-          "top": 200,
-          "right": 500,
-          "bottom": 300
+          "left": 100,
+          "top": 50,
+          "right": 100,
+          "bottom": 100
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -119,7 +119,7 @@
         "type": "input_network_stream",
         "category": "inputs",
         "settings": {
-          "location": "rtsp://scailx-ai-2.local:554/stream"
+          "location": "rtsp://scailx-ai.local:554/stream"
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -144,6 +144,6 @@
     }
   ],
   "inputId": "local_camera0",
-  "processingId": ["crop0"],
+  "processingId": ["crop0", "resize0"],
   "outputId": "input_network_stream0" 
 }

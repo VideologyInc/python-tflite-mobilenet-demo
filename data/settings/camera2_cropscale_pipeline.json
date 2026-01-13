@@ -14,7 +14,7 @@
           "format": "NV12",
           "fps": 30,
           "resolution": "1920x1080",
-          "device": "/dev/video0"
+          "device": "/dev/video2"
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -119,7 +119,7 @@
         "type": "input_network_stream",
         "category": "inputs",
         "settings": {
-          "location": "rtsp://scailx-ai-2.local:554/stream"
+          "location": "rtsp://scailx-ai.local:554/stream"
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -144,6 +144,6 @@
     }
   ],
   "inputId": "local_camera0",
-  "processingId": ["crop0"],
+  "processingId": ["crop0", "resize0"],
   "outputId": "input_network_stream0" 
 }
