@@ -12,9 +12,9 @@
         "category": "inputs",
         "settings": {
           "format": "NV12",
-          "fps": 60,
-          "resolution": "1280x720",
-          "device": "/dev/video2"
+          "fps": 30,
+          "resolution": "1920x1080",
+          "device": "/dev/video1"
         },
         "initiallyOpen": false,
         "outputIds": [
@@ -47,7 +47,7 @@
         "type": "input_network_stream",
         "category": "inputs",
         "settings": {
-          "location": "rtsp://scailx-ai.local:554/stream"
+          "location": "rtsp://scailx-ai-2.local:554/stream"
         },
         "initiallyOpen": false,
         "outputIds": [

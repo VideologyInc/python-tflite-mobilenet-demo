@@ -21,7 +21,7 @@ import socket
 import logging
 import queue
 
-from read_write_json import read_pipeline, save_pipeline
+from read_write_json import read_pipeline, save_pipeline, get_processing_nodes
 
 gi.require_version("Gst", "1.0")
 gi.require_version("GstRtspServer", "1.0")
@@ -37,10 +37,51 @@ t1_ = time()
 prev_frame_time = 0
 new_frame_time = 0
 
+def get_last_node_dimension(process_list):
+    n = len(process_list)
+    if n>=1 and process_list[-1]["type"]=="videoscale":
+        width = process_list[-1]["settings"]["width"]
+        height = process_list[-1]["settings"]["height"]
+        return width, height
+    else:
+        return 0, 0    
+
+def get_gst_processing_string(node_dict):
+    """
+    Given one node dict, return its gst string.
+    Now support videoscale or videocrop
+
+    """
+
+    if node_dict["type"]=="videoscale":
+        width = node_dict["settings"]["width"]
+        height = node_dict["settings"]["height"]
+        return f"queue max-size-buffers=10 leaky=2 ! videoscale ! video/x-raw, width={width}, height={height}"
+    elif node_dict["type"]=="videocrop":
+        left = node_dict["settings"]["left"]
+        top = node_dict["settings"]["top"]
+        right = node_dict["settings"]["right"]
+        bottom = node_dict["settings"]["bottom"]
+        return f"queue max-size-buffers=10 leaky=2 ! videocrop top={top} left={left} right={right} bottom={bottom}"
+    else:
+        return ""
+
+def get_gst_full_processing_string(process_list):
+    """
+    Given list of processing node dict, return gst full processing string.
+    """
+
+    outs = ""
+    for node_dict in process_list:
+        s = get_gst_processing_string(node_dict)
+        if s!="":
+            outs += "! " + s + " "
+    return outs    
+
 
 ## Media factory that runs camera streaming
 class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
-    def __init__(self, pipe_dict, **properties):
+    def __init__(self, pipe_dict, process_list, **properties):
         super(StreamDataFactory, self).__init__(**properties)
 
         # Setup frame counter for timestamps
@@ -56,21 +97,41 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
         self.width = int(dimensions_list[0])
         self.height = int(dimensions_list[1])
 
-        # Create opencv Video Capture
-        self.cap = cv2.VideoCapture(
+        w, h = get_last_node_dimension(process_list)
+        if w>0 and h>0:
+            outwidth = w
+            outheight = h
+        else:
+            outwidth = self.width
+            outheight = self.height
+
+        # process str is like '! ... '
+        gst_processing_str = get_gst_full_processing_string(process_list)
+
+        format_str = pipe_dict["format"]
+        convert_str = "imxvideoconvert_g2d"
+
+        gst_src_string = (
             f"v4l2src device={pipe_dict['device']} "
-            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
-            f"! imxvideoconvert_g2d "
-            f"! video/x-raw,format=RGBA "
-            f"! appsink",
-            cv2.CAP_GSTREAMER,
+            f"! video/x-raw,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1,format={format_str} "
+            f" {gst_processing_str} "
+            f"! queue max-size-buffers=10 leaky=2 ! {convert_str} "
+            f"! video/x-raw,width={outwidth},height={outheight},format=RGBA "
+            f"! appsink"
         )
+
+        print()
+        print(gst_src_string)
+        print()
+
+        # Create opencv Video Capture
+        self.cap = cv2.VideoCapture(gst_src_string, cv2.CAP_GSTREAMER,)
 
         # Create factory launch string
         self.launch_string = (
             f"appsrc name=source is-live=true format=GST_FORMAT_TIME "
-            f"! video/x-raw,format=RGBA,width={self.width},height={self.height},framerate={pipe_dict['fps']}/1 "
-            f"! vpuenc_h264 "
+            f"! video/x-raw,format=RGBA,width={outwidth},height={outheight},framerate={pipe_dict['fps']}/1 "
+            f"! queue max-size-buffers=10 leaky=2 ! vpuenc_h264 "
             f"! rtph264pay config-interval=1 name=pay0 pt=96 "
         )
 
@@ -141,7 +202,7 @@ class StreamDataFactory(GstRtspServer.RTSPMediaFactory):
 
 
 class RtspServer(GstRtspServer.RTSPServer):
-    def __init__(self, pipe_dict, net_url, **properties):
+    def __init__(self, pipe_dict, net_url, process_list, **properties):
         super(RtspServer, self).__init__(**properties)
 
         # Use hostname as server mount point instead of 127.0.0.1 ;-)
@@ -152,7 +213,7 @@ class RtspServer(GstRtspServer.RTSPServer):
         self.set_service(pipe_dict["port"])
 
         # Create factory
-        self.factory = StreamDataFactory(pipe_dict)
+        self.factory = StreamDataFactory(pipe_dict, process_list)
 
         # Set the factory to shared so it supports multiple clients
         self.factory.set_shared(True)
@@ -212,9 +273,11 @@ def main():
     print(args.device)
 
     pipe_dict = {}
+    process_list = []
     net_url = ""
     if args.pipeline is not None:
         data_dict, pipe_dict, net_url = read_pipeline(args.pipeline)
+        process_list = get_processing_nodes(data_dict)
 
     if pipe_dict=={}:
         pipe_dict["device"] = args.device
@@ -228,10 +291,12 @@ def main():
     pipe_dict["port"] = args.port
 
     print(pipe_dict)
+    if len(process_list)>0:
+        print(process_list)    
     print("net url from pipeline file = ", net_url)
 
     Gst.init(None)
-    server = RtspServer(pipe_dict, net_url)
+    server = RtspServer(pipe_dict, net_url, process_list)
 
     # Port is updated in server init if set_service("0").
     # So we need to save output pipeline json here (not before server initialized ;-)

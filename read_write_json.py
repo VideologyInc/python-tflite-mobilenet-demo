@@ -33,12 +33,36 @@ def get_port_from_url(url_string):
         # Returns None if no port is explicitly mentioned and the scheme is non-standard
         return None
 
+def get_processing_nodes(data_dict):
+    """
+    Given full data dict from pipeline json file, extract its processing nodes as output
+
+    Arguments:
+    data_dict (dict) -- Input pipeline full data dict.
+    
+    Returns:
+    (list[dict]) -- List of processing node dict ('data' section in the full data dict).
+
+    """
+
+    process_list = []
+    if "processingId" in data_dict:
+        node_list = data_dict["processingId"]
+        # Go through components to find matching node of each node id.
+        for id in node_list:
+            if "components" in data_dict:
+                for cm in data_dict["components"]:
+                    if "id" in cm and cm["id"]==id and "data" in cm:
+                        process_list.append(cm["data"])
+    return process_list
+
+
 def read_pipeline(filename):
     """
     Given input pipeline json name, parse the data section, return truple of (full data dict, camera setting dict, rtsp full url).
 
     Arguments:
-    filename -- Input pipeline json filename.
+    filename (str) -- Input pipeline json filename.
     
     Returns:
     (dict, dict, str) -- Tuple of full data dict, camera setting dict and rtsp full url to access.
