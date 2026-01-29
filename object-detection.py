@@ -146,14 +146,14 @@ class InferenceDataFactory(GstRtspServer.RTSPMediaFactory):
         # Create opencv Video Capture
         self.cap = cv2.VideoCapture(f'v4l2src device={DEVICE} ' \
                                     f'! video/x-raw,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1,format=NV12 ' \
-                                    f'! queue ! imxvideoconvert_g2d ' \
+                                    f'! imxvideoconvert_g2d ' \
                                     f'! video/x-raw,,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},format=BGRA ' \
                                     f'! appsink', cv2.CAP_GSTREAMER)
 
         # Create factory launch string
         self.launch_string = f'appsrc name=source is-live=true format=GST_FORMAT_TIME ' \
                              f'! video/x-raw,format=BGRA,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1 ' \
-                             f'! queue ! vpuenc_h264 bitrate={STREAM_BITRATE} ' \
+                             f'! vpuenc_h264 bitrate={STREAM_BITRATE} ' \
                              f'! rtph264pay config-interval=1 name=pay0 pt=96 '
 
           
