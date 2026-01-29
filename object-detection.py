@@ -145,7 +145,7 @@ class InferenceDataFactory(GstRtspServer.RTSPMediaFactory):
 
         # Create opencv Video Capture
         self.cap = cv2.VideoCapture(f'v4l2src device={DEVICE} ' \
-                                    f'! video/x-raw,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1,format=NV12 ' \
+                                    f'! video/x-raw,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1,format=RGBA ' \
                                     f'! imxvideoconvert_g2d ' \
                                     f'! video/x-raw,,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},format=RGBA ' \
                                     f'! appsink', cv2.CAP_GSTREAMER)
