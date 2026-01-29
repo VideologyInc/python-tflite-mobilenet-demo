@@ -147,7 +147,7 @@ class InferenceDataFactory(GstRtspServer.RTSPMediaFactory):
         self.cap = cv2.VideoCapture(f'v4l2src device={DEVICE} ' \
                                     f'! video/x-raw,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},framerate={CAPTURE_FRAMERATE}/1,format=NV12 ' \
                                     f'! queue ! imxvideoconvert_g2d ' \
-                                    f'! video/x-raw,format=BGRA ' \
+                                    f'! video/x-raw,,width={CAPTURE_RESOLUTION_X},height={CAPTURE_RESOLUTION_Y},format=BGRA ' \
                                     f'! appsink', cv2.CAP_GSTREAMER)
 
         # Create factory launch string
