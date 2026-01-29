@@ -423,7 +423,9 @@ def main():
 
     parser.add_argument("--port", "-t", help="Port number rtsp server sets by service (0 to set random available)", default="554")
 
-    parser.add_argument('--resolution', '-r', help='1080p or 720p', default='1080p')
+    parser.add_argument("--width", "-w", help="1920 or 1280 or 640 for Boson", default="1920")
+    parser.add_argument("--height", help="1080 or 720 or 512 for Boson", default="1080")
+
     parser.add_argument('--framerate', '-f', help='Capture framrate 60 or 30', default='60')
     # NOT YET IMPLEMENTED
     parser.add_argument('--object_list', '-o', nargs='+', default=['person', 'bicycle', 'car'])
@@ -450,15 +452,8 @@ def main():
     else:
         DEVICE = args.device
 
-    if args.resolution == None:
-        CAPTURE_RESOLUTION_X=1920
-        CAPTURE_RESOLUTION_Y=1080
-    if args.resolution == '1080p':
-        CAPTURE_RESOLUTION_X=1920
-        CAPTURE_RESOLUTION_Y=1080
-    if args.resolution == '720p':
-        CAPTURE_RESOLUTION_X=1280
-        CAPTURE_RESOLUTION_Y=720
+    CAPTURE_RESOLUTION_X=args.width
+    CAPTURE_RESOLUTION_Y=args.height
 
     if args.framerate == None:
         CAPTURE_FRAMERATE = 60
