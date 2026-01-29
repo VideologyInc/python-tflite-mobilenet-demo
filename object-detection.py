@@ -368,8 +368,16 @@ class InferenceDataFactory(GstRtspServer.RTSPMediaFactory):
 
 
 class RtspServer(GstRtspServer.RTSPServer):
-    def __init__(self, **properties):
+    def __init__(self, port, **properties):
         super(RtspServer, self).__init__(**properties)
+
+        # Use hostname as server mount point instead of 127.0.0.1 ;-)
+        self.hostname = socket.gethostname()
+
+        self.set_address(self.hostname)
+        # Set port by user input
+        self.set_service(port)
+
         # Create factory
         self.factory = InferenceDataFactory()
 
@@ -380,6 +388,21 @@ class RtspServer(GstRtspServer.RTSPServer):
         # The stream will be available at rtsp://<board-ip>:8554/stream
         self.get_mount_points().add_factory("/stream", self.factory)
         self.attach(None)
+
+        # Get the address
+        server_address = self.get_address()
+        ip_address = socket.gethostbyname(self.hostname)
+
+        # Get the bound port number
+        server_port = self.get_bound_port()
+        if server_port==-1:
+            # service port is not available. Set 0 using randomly assigned port instead.
+            raise ValueError(f"Service port {port} is not available. Please use 0 instead to get assigned port randomly.") 
+
+        pipe_dict["port"] = str(server_port)
+        print(f"Stream URL: rtsp://{server_address}:{server_port}/stream")
+        print(f"Stream URL: rtsp://{ip_address}:{server_port}/stream")
+
 
     def client_connected(self, gst_server_obj, rtsp_client_obj):
         logging.info('[INFO]: Client has connected')
@@ -398,6 +421,9 @@ def main():
     parser.add_argument('--model', '-m',  help='Name of model file', default='lite-model_ssd_mobilenet_v1_1_metadata_2.tflite')
     parser.add_argument('--label', '-l',  help='Name of label file', default='labelmap.txt')
     parser.add_argument('--device', '-d', help='Video device /dev/video.. ', default='/dev/video1')
+
+    parser.add_argument("--port", "-t", help="Port number rtsp server sets by service (0 to set random available)", default="554")
+
     parser.add_argument('--resolution', '-r', help='1080p or 720p', default='1080p')
     parser.add_argument('--framerate', '-f', help='Capture framrate 60 or 30', default='60')
     # NOT YET IMPLEMENTED
@@ -450,7 +476,7 @@ def main():
     print(CAPTURE_RESOLUTION_X,'x',CAPTURE_RESOLUTION_Y,'@',CAPTURE_FRAMERATE)
 
     Gst.init(None)
-    server = RtspServer()
+    server = RtspServer(args.port)
     loop = GLib.MainLoop()
     loop.run()
 
