@@ -399,7 +399,6 @@ class RtspServer(GstRtspServer.RTSPServer):
             # service port is not available. Set 0 using randomly assigned port instead.
             raise ValueError(f"Service port {port} is not available. Please use 0 instead to get assigned port randomly.") 
 
-        pipe_dict["port"] = str(server_port)
         print(f"Stream URL: rtsp://{server_address}:{server_port}/stream")
         print(f"Stream URL: rtsp://{ip_address}:{server_port}/stream")
 
