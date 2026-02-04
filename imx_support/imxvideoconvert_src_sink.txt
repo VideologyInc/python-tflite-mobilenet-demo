@@ -1,0 +1,87 @@
+Factory Details:
+  Rank                     primary + 1 (257)
+  Long-name                IMX g2d Video Converter
+  Klass                    Filter/Converter/Video
+  Description              Video CSC/Resize/Rotate.
+  Author                   Multimedia Team <shmmmw@freescale.com>
+
+Plugin Details:
+  Name                     imxvideoconvert
+  Description              IMX Video Convert Plugins
+  Filename                 /usr/lib/gstreamer-1.0/libgstimxvideoconvert.so
+  Version                  4.9.2
+  License                  LGPL
+  Source module            imx-gst1.0-plugin
+  Binary package           Freescle Gstreamer Multimedia Plugins
+  Origin URL               http://www.freescale.com
+
+GObject
+ +----GInitiallyUnowned
+       +----GstObject
+             +----GstElement
+                   +----GstBaseTransform
+                         +----GstVideoFilter
+                               +----imxvideoconvert_g2d
+
+Pad Templates:
+  SINK template: 'sink'
+    Availability: Always
+    Capabilities:
+      video/x-raw
+                 format: { (string)RGB16, (string)RGBx, (string)RGBA, (string)BGRA, (string)BGRx, (string)BGR16, (string)ARGB, (string)ABGR, (string)xRGB, (string)xBGR, (string)I420, (string)NV12, (string)UYVY, (string)YUY2, (string)YVYU, (string)YV12, (string)NV16, (string)NV21 }
+      video/x-raw(memory:SystemMemory, meta:GstVideoOverlayComposition)
+                 format: { (string)RGB16, (string)RGBx, (string)RGBA, (string)BGRA, (string)BGRx, (string)BGR16, (string)ARGB, (string)ABGR, (string)xRGB, (string)xBGR, (string)I420, (string)NV12, (string)UYVY, (string)YUY2, (string)YVYU, (string)YV12, (string)NV16, (string)NV21 }
+  
+  SRC template: 'src'
+    Availability: Always
+    Capabilities:
+      video/x-raw
+                 format: { (string)RGB16, (string)RGBx, (string)RGBA, (string)BGRA, (string)BGRx, (string)BGR16, (string)ARGB, (string)ABGR, (string)xRGB, (string)xBGR }
+      video/x-raw(memory:SystemMemory, meta:GstVideoOverlayComposition)
+                 format: { (string)RGB16, (string)RGBx, (string)RGBA, (string)BGRA, (string)BGRx, (string)BGR16, (string)ARGB, (string)ABGR, (string)xRGB, (string)xBGR }
+
+Element has no clocking capabilities.
+Element has no URI handling capabilities.
+
+Pads:
+  SINK: 'sink'
+    Pad Template: 'sink'
+  SRC: 'src'
+    Pad Template: 'src'
+
+Element Properties:
+
+  composition-meta-enable: Enable overlay composition meta processing
+                        flags: readable, writable
+                        Boolean. Default: false
+  
+  in-place            : Handle composition meta in place in pass through mode, video overlay composition will blended onto input buffer
+                        flags: readable, writable
+                        Boolean. Default: false
+  
+  name                : The name of the object
+                        flags: readable, writable
+                        String. Default: "imxvideoconvert_g2d0"
+  
+  parent              : The parent of the object
+                        flags: readable, writable
+                        Object of type "GstObject"
+  
+  qos                 : Handle Quality-of-Service events
+                        flags: readable, writable
+                        Boolean. Default: true
+  
+  rotation            : Rotation that shall be applied to output frames
+                        flags: readable, writable
+                        Enum "ImxVideoConvertRotationMode" Default: 0, "none"
+                           (0): none             - No rotation
+                           (1): rotate-90        - Rotate 90 degrees
+                           (2): rotate-180       - Rotate 180 degrees
+                           (3): rotate-270       - Rotate 270 degrees
+                           (4): horizontal-flip  - Flip horizontally
+                           (5): vertical-flip    - Flip vertically
+  
+  videocrop-meta-enable: Enable videocrop meta processing
+                        flags: readable, writable
+                        Boolean. Default: false
+  
